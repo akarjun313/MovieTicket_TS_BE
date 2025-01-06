@@ -1,0 +1,271 @@
+import { Request, Response } from "express"
+import { ITheatre, ILocation, IScreen, UserInterface, IMovie, IShowTime, ISeat } from "@interfaces/interfaces.js"
+import Theatre from "@models/theatreModel.js"
+import jwt from "jsonwebtoken"
+import User from "@models/userModel.js"
+import Movie from "@models/movieModel.js"
+import mongoose from "mongoose"
+import { generateSeatingArrangement } from "src/helper/seatingArrangement.js"
+
+// create theatre 
+export const addNewTheatre = async ( req: Request, res: Response ): Promise<void> => {
+    try {
+
+        //verify token
+        const token: string = req.cookies.token
+        if(!token) {
+            res.status(401).json({ message: "Unauthorized, login first", success: false})
+            return
+        }
+
+        // decode token 
+        const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { data: string, role: string }
+        const userId: string = decoded.data
+
+        //verify user
+        const userExist: UserInterface | null = await User.findById(userId)
+        if(!userExist) {
+            res.status(401).json({ message: "Unauthorized, login first", success: false })
+            return
+        }
+
+        if(userExist.role !== 'owner') {
+            res.status(401).json({ message: "Unauthorized, login as owner", success: false })
+            return
+        }
+
+
+
+        // theatre details
+        const { theatreName }: ITheatre = req.body
+
+        //location details
+        const { state, city, landmark }: ILocation = req.body.location
+
+        //screen details
+        // const { screenName, seatRow, seatColumn }: IScreen = req.body
+        const screens = req.body.screens.map((screen: IScreen) => ({
+            screenName: screen.screenName,
+            seatRow: screen.seatRow,
+            seatColumn: screen.seatColumn
+        }))
+
+
+        // create new theatre
+        const newTheatre = new Theatre({
+            theatreName,
+            location: {
+                state,
+                city,
+                landmark
+            },
+            screens,
+            owner: userId
+        })
+        await newTheatre.save()
+
+
+        res.status(200).json({ message: "New theatre added successfully", success: true })
+    } catch (error) {
+        console.log("Error in adding new theatre", error)
+        res.status(500).json({ message: "Internal server error at adding new theatre", success: false })
+    }
+}
+
+
+// show all theatre (For admin only)
+export const showAllTheatre = async ( req: Request, res: Response ): Promise<void> => {
+    try {
+
+        // getting all theatres list from DB 
+        const theatres: ITheatre[] = await Theatre.find()
+        if(!theatres || theatres.length === 0) {
+            res.status(404).json({ message: "No theatres found", success: false })
+            return
+        }
+
+        res.status(200).json({ message: theatres, success: true })
+    } catch (error) {
+        console.log("Error in showing all theatres", error)
+        res.status(500).json({ message: "Internal server error at showing all theatres", success: false })
+    }
+}
+
+
+
+// show a specific theatre
+export const showOneTheatre = async ( req: Request<{ id: string }>, res: Response ): Promise<Response> => {
+    try {
+        // theatre id here
+        const { id } = req.params
+
+        // search by theatre id 
+        const theatre: ITheatre | null = await Theatre.findById(id)
+        if(!theatre) {
+            return res.status(404).json({ message: "Theatre not found", success: false })
+        }
+
+        return res.status(200).json({ message: theatre, success: true })
+    } catch (error) {
+        console.log("Error in showing one theatre", error)
+        return res.status(500).json({ message: "Internal server error at showing one theatre", success: false })
+    }
+}
+
+
+
+// delete a theatre
+export const deleteOneTheatre = async ( req: Request<{ id: string }>, res: Response ): Promise<Response> => {
+    try {
+        // theatre id here
+        const { id } = req.params
+
+        // search by theatre id and delete
+        const theatre: ITheatre | null = await Theatre.findByIdAndDelete(id)
+        if(!theatre) {
+            return res.status(404).json({ message: "Theatre not found", success: false })
+        }
+        return res.status(200).json({ message: "Theatre deleted successfully", success: true })
+    } catch (error) {
+        console.log("Error in deleting one theatre", error)
+        return res.status(500).json({ message: "Internal server error at deleting one theatre", success: false })
+    }
+}
+
+
+// UPDATE THEATRE
+// update movie in theatre-screen
+export const updateMovieInTheatre = async ( req: Request<{ id: string }>, res: Response ): Promise<void> => {
+    try {
+        // theatre id here
+        const { id } = req.params
+
+        // movie id & screen name here
+        const { movieId, screen }: { movieId: string; screen: string } = req.body
+
+        const theatre: ITheatre | null = await Theatre.findById(id)
+        if(!theatre) {
+            res.status(404).json({ message: "Theatre not found", success: false })
+            return
+        } 
+
+        // check if theatre is active
+        if(theatre.status === false) {
+            res.status(400).json({ message: "Theatre is not active", success: false })
+            return
+        }
+
+
+        // finding movie
+        const movie : IMovie | null = await Movie.findById(movieId)
+        if(!movie) {
+            res.status(404).json({ message: "Movie not found", success: false })
+            return
+        }
+
+
+        // update movie in theatre with respective screen
+        const targetScreen: IScreen | undefined = theatre.screens.find((scr)=> scr.screenName === screen)
+        if(!targetScreen) {
+            res.status(404).json({ message: "Screen not found", success: false })
+            return
+        }
+
+        targetScreen.movie = movie._id as mongoose.Types.ObjectId
+
+        // save changes to DB 
+        await theatre.save()
+
+
+        res.status(200).json({ message: "Movie updated successfully in theatre", success: true })
+
+    } catch (error) {
+        res.status(500).json({ message: "Internal server error at updating movie in theatre", success: false })
+        console.log("error in updating movie in theatre", error)
+    }
+}
+
+
+// update date and times of theatre-screen
+export const updateShowTimings = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+    try {
+        // theatre id here
+        const { id } = req.params
+
+
+        // show timings with date and screen name here
+        const  { date, time, price, screen }: { date: string; time: string; price: number; screen: string } = req.body
+
+        // finding theatre
+        const theatre: ITheatre | null = await Theatre.findById(id)
+        if(!theatre) {
+            res.status(404).json({ message: "Theatre not found", success: false })
+            return
+        }
+
+        // check if theatre is active
+        if(theatre.status === false) {
+            res.status(400).json({ message: "Theatre is not active", success: false })
+            return
+        }
+
+
+        // find target screen
+        const targetScreen: IScreen | undefined = theatre.screens.find((scr)=> scr.screenName === screen)
+        if(!targetScreen) {
+            res.status(404).json({ message: "Screen not found", success: false })
+            return
+        }
+
+        // check if show timings already exist
+        const showTimeExist = targetScreen.showTimes.some(
+            (showTime)=> showTime.date === date && showTime.time === time
+        )
+        if(showTimeExist) {
+            res.status(400).json({ message: "Show timings already exist", success: false })
+            return
+        }
+
+        //fill out seating
+        const seats: ISeat[] = generateSeatingArrangement(targetScreen.seatRow, targetScreen.seatColumn)
+
+        // update show timings, price
+        targetScreen.showTimes.push({
+            date,
+            time,
+            price,
+            seats
+        } as IShowTime)
+
+        await theatre.save()
+
+
+        res.status(200).json({ message: "Show timings updated successfully", success: true })
+
+    } catch (error) {
+        console.log("Error in updating show timings", error)
+        res.status(500).json({ message: "Internal server error at updating show timings", success: false })
+    }
+}
+
+
+
+//update the status of theatre (for admin only)
+export const updateTheatreStatus = async ( req: Request<{ id: string }>, res: Response ): Promise<void> => {
+    try {
+        // theatre id here
+        const { id } = req.params
+
+        // update theatre status here
+        const theatre: ITheatre | null = await Theatre.findByIdAndUpdate(id, { status: true }, { new: true })
+        if(!theatre) {
+            res.status(404).json({ message: "Theatre not found", success: false })
+            return
+        }
+
+        res.status(200).json({ message: "Theatre status updated successfully", success: true })
+    } catch (error) {
+        res.status(500).json({ message: "Internal server error at updating theatre status", success: false })
+        console.log("error in updating theatre status", error)
+    }
+}
