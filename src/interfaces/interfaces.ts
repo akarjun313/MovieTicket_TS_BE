@@ -26,6 +26,7 @@ export interface IMovie extends Document {
     rating: number;
     duration: number;
     coverImage: string;
+    posterImage: string;
     status: 'RUNNING' | 'UPCOMING';
 }
 

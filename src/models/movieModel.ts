@@ -38,6 +38,10 @@ const movieSchema = new mongoose.Schema<IMovie>({
         type: String,
         required: true
     },
+    posterImage: {
+      type: String,
+      required: true  
+    },
     status: {
         type: String,
         enum: ['RUNNING', 'UPCOMING'],

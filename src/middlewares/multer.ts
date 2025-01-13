@@ -1,5 +1,5 @@
-import multer, { StorageEngine, Multer } from "multer"
-import { Request } from "express"
+import multer, { StorageEngine } from "multer"
+import { Request, RequestHandler } from "express"
 
 const storage: StorageEngine = multer.diskStorage({
     filename: (req: Request, file: Express.Multer.File, cb) => {
@@ -7,5 +7,11 @@ const storage: StorageEngine = multer.diskStorage({
     }
 })
 
-const upload: Multer = multer({ storage })
-export default upload
+const upload = multer({ storage }).fields([
+    {name: 'movieImage', maxCount: 1},
+    {name: 'bgImage', maxCount: 1}
+])
+
+
+const uploadMiddleware: RequestHandler = upload as RequestHandler
+export default uploadMiddleware;
