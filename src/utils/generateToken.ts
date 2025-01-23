@@ -4,11 +4,6 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-// //creating interface for user details
-// interface IUser {
-//     id: string
-//     role: string
-// }
 
 // token generator for users/owners 
 export const userTokenGenerate = (userExist: UserInterface): string => {

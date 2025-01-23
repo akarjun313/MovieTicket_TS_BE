@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { UserInterface } from "@interfaces/interfaces.js"
+import { AuthRequest, UserInterface } from "@interfaces/interfaces.js"
 import User from "@models/userModel.js"
 import bcrypt from "bcrypt"
 import { userTokenGenerate } from "@utils/generateToken.js"
@@ -78,3 +78,27 @@ export const userLogin = async ( req: Request, res: Response ): Promise<void> =>
 
 
 //user sign-out/logout
+
+//get user details
+export const getUserDetails = async ( req: AuthRequest , res: Response ): Promise<void> => {
+    try {
+        //user id
+        if(!req.user) {
+            res.status(401).json({ message: "Unauthorized, login first", success: false })
+            return
+        }
+        const userId: string = req.user.data
+
+
+        const userDetails: UserInterface | null = await User.findById(userId)
+        if(!userDetails) {
+            res.status(404).json({ message: "User not found", success: false })
+            return
+        }
+
+        res.status(200).json({ message: userDetails, success: true })
+
+    } catch (error) {
+        res.status(500).json({ message: "Internal server error at getting user details", success: false })
+    }
+}

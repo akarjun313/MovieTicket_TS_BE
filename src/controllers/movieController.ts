@@ -1,6 +1,5 @@
 import { Request, Response } from "express"
 import { cloudinaryInstance } from "@config/cloudinary.js"
-import { UploadApiResponse, UploadApiErrorResponse } from "cloudinary"
 import { IMovie } from "@interfaces/interfaces.js"
 import Movie from "@models/movieModel.js"
 
@@ -74,25 +73,26 @@ export const createMovie = async (req: Request, res: Response): Promise<void> =>
 
 
 // show all movie
-export const showAllMovies = async (req: Request, res: Response): Promise<Response> => {
+export const showAllMovies = async (req: Request, res: Response): Promise<void> => {
     try {
 
         // getting all movies list from DB 
         const movies: IMovie[] = await Movie.find()
         if (!movies || movies.length === 0) {
-            return res.status(404).json({ message: "No movies found", success: false })
+            res.status(404).json({ message: "No movies found", success: false })
+            return
         }
 
-        return res.status(200).json({ message: movies, success: true })
+        res.status(200).json({ message: movies, success: true })
     } catch (error) {
         console.log("Error in showing movies", error)
-        return res.status(500).json({ message: "Internal server error at showing movies", success: false })
+        res.status(500).json({ message: "Internal server error at showing movies", success: false })
     }
 }
 
 
 // show a specific movie 
-export const showMovie = async (req: Request, res: Response): Promise<Response> => {
+export const showMovie = async (req: Request, res: Response): Promise<void> => {
     try {
 
         // movie id here
@@ -102,14 +102,15 @@ export const showMovie = async (req: Request, res: Response): Promise<Response> 
         // search by movie id 
         const movie: IMovie | null = await Movie.findById(id)
         if (!movie) {
-            return res.status(404).json({ message: "Movie not found", success: false })
+            res.status(404).json({ message: "Movie not found", success: false })
+            return
         }
 
 
-        return res.status(200).json({ message: movie, success: true })
+        res.status(200).json({ message: movie, success: true })
     } catch (error) {
         console.log("Error in showing movie", error)
-        return res.status(500).json({ message: "Internal server error at showing movie", success: false })
+        res.status(500).json({ message: "Internal server error at showing movie", success: false })
     }
 }
 

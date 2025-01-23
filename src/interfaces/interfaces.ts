@@ -1,3 +1,4 @@
+import { Request } from "express";
 import mongoose, { Document } from "mongoose"
 
 
@@ -69,4 +70,23 @@ export interface ITheatre extends Document {
     screens: IScreen[]
     status: boolean
     owner: mongoose.Types.ObjectId
+}
+
+
+//REVIEW INTERFACE
+export interface IReview extends Document {
+    review: string
+    rating: number
+    movie: mongoose.Types.ObjectId
+    user: mongoose.Types.ObjectId
+}
+
+
+
+//RE-DEFINED REQUEST(for authentication) INTERFACE
+export interface AuthRequest extends Request {
+    user?: {
+        data: string;
+        role: string
+    }
 }
