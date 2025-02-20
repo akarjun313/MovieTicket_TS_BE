@@ -13,7 +13,10 @@ const port: Number = 3001   // port
 // middlewares 
 app.use(express.json())
 app.use(cookieParser())
-app.use(cors())
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+}))
 
 // routes 
 app.use('/api/v1/user', userRouter)

@@ -2,6 +2,7 @@ import { Request, Response } from "express"
 import { cloudinaryInstance } from "@config/cloudinary.js"
 import { IMovie } from "@interfaces/interfaces.js"
 import Movie from "@models/movieModel.js"
+import Theatre from "@models/theatreModel.js"
 
 // create new movie 
 export const createMovie = async (req: Request, res: Response): Promise<void> => {
@@ -116,21 +117,29 @@ export const showMovie = async (req: Request, res: Response): Promise<void> => {
 
 
 // delete a movie 
-export const deleteMovie = async (req: Request, res: Response): Promise<Response> => {
+export const deleteMovie = async (req: Request, res: Response): Promise<void> => {
     try {
         //movie id here
         const { id } = req.params
 
+        const theatreCountOfMoviePlaying: number = await Theatre.countDocuments({'screens.movie': id})
+        if(theatreCountOfMoviePlaying > 0) {
+            res.json({ message: `FAILED !!, Movie is currently playing in ${theatreCountOfMoviePlaying} theatre(s)`, success: false })
+            return
+        }
+
+
         // search by movie id and delete
         const movie: IMovie | null = await Movie.findByIdAndDelete(id)
         if (!movie) {
-            return res.status(404).json({ message: "Movie not found", success: false })
+            res.status(404).json({ message: "Movie not found", success: false })
+            return
         }
 
-        return res.status(200).json({ message: "Movie deleted successfully", success: true })
+        res.status(200).json({ message: "Movie deleted successfully", success: true })
     } catch (error) {
         console.log("Error in deleting movie", error)
-        return res.status(500).json({ message: "Internal server error at deleting movie", success: false })
+        res.status(500).json({ message: "Internal server error at deleting movie", success: false })
     }
 }
 

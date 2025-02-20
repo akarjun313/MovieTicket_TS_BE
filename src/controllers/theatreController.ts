@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken"
 import User from "@models/userModel.js"
 import Movie from "@models/movieModel.js"
 import mongoose from "mongoose"
-import { generateSeatingArrangement } from "src/helper/seatingArrangement.js"
+import { generateSeatingArrangement } from "helper/seatingArrangement.js"
 
 // create theatre 
 export const addNewTheatre = async ( req: Request, res: Response ): Promise<void> => {
@@ -78,13 +78,20 @@ export const showAllTheatre = async ( req: Request, res: Response ): Promise<voi
     try {
 
         // getting all theatres list from DB 
-        const theatres: ITheatre[] = await Theatre.find()
+        const theatres: ITheatre[] = await Theatre.find().select('-__v')
         if(!theatres || theatres.length === 0) {
             res.status(404).json({ message: "No theatres found", success: false })
             return
         }
 
-        res.status(200).json({ message: theatres, success: true })
+
+        //update with owner id with owner details
+        const theatreWithOwner = await Promise.all(theatres.map(async (theatre: ITheatre) => {
+            const owner = await User.findById(theatre.owner).select('-hashPassword -createdAt -updatedAt -__v')
+            return { ...theatre.toObject(), owner }
+        }))
+
+        res.status(200).json({ message: theatreWithOwner, success: true })
     } catch (error) {
         console.log("Error in showing all theatres", error)
         res.status(500).json({ message: "Internal server error at showing all theatres", success: false })
