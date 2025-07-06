@@ -52,7 +52,7 @@ export interface IScreen extends Document {
     screenName: string
     seatRow: number
     seatColumn: number
-    movie: mongoose.Types.ObjectId
+    movie?: mongoose.Types.ObjectId  | { movieName: string; _id: mongoose.Types.ObjectId } | null | undefined
     showTimes: IShowTime[]
 }
 
@@ -90,3 +90,8 @@ export interface AuthRequest extends Request {
         role: string
     }
 }
+
+
+
+
+// 

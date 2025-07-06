@@ -1,9 +1,9 @@
-import express, { Router, Request, Response } from "express"
+import { Router, Request, Response } from "express"
 import { getUserDetails, userLogin, userSignUp } from "@controllers/userController.js"
 import { showAllMovies, showMovie } from "@controllers/movieController.js"
 import { userAuthentication } from "@middlewares/authentication.js"
 
-const userRouter: Router = express.Router()
+const userRouter = Router()
 
 userRouter.get('/', (req: Request, res: Response) => {
     res.send('User routes')
@@ -18,7 +18,6 @@ userRouter.post('/signup', userSignUp)
 userRouter.post('/login', userLogin)
 
 
-// Logout
 //user Details - for profile
 userRouter.get('/user-details', userAuthentication, getUserDetails)
 
