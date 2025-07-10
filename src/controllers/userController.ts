@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { AuthRequest, UserInterface } from "@interfaces/interfaces.js"
 import User from "@models/userModel.js"
-import { signinUser, signupUser } from "services/userServices.js"
+import { signinUser, signupUser } from "@services/userServices.js"
 import { UserSignupDTO } from "@interfaces/dto.interfaces.js"
 
 

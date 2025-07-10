@@ -1,74 +1,27 @@
 import { Request, Response } from "express"
-import { cloudinaryInstance } from "@config/cloudinary.js"
 import { IMovie } from "@interfaces/interfaces.js"
 import Movie from "@models/movieModel.js"
 import Theatre from "@models/theatreModel.js"
+import { UploadedFiles } from "@interfaces/dto.interfaces.js"
+import { createNewMovie, fetchAllMovies, findMovieById } from "@services/movieServices.js"
 
-// create new movie 
+
+// controller create new movie 
 export const createMovie = async (req: Request, res: Response): Promise<void> => {
     try {
 
-        // checking for image file in multer 
-        const files = req.files as { movieImage: Express.Multer.File[], bgImage: Express.Multer.File[] }
-        if (!files.movieImage || files.movieImage.length === 0) {
-            res.status(400).json({ message: 'Movie image/poster file not uploaded', success: false })
-            return
-        }
-        if (!files.bgImage || files.bgImage.length === 0) {
-            res.status(400).json({ message: 'Background image/cover file not uploaded', success: false })
-            return
-        }
-
-        const movieImage = files.movieImage[0]      //stores movie poster image
-        const bgImage = files.bgImage[0]        //stores background image
-
-        // uploading to cloudinary
-        let movieImageUpload
-        let bgImageUpload
-
-        try {
-            movieImageUpload = await cloudinaryInstance.uploader.upload(movieImage.path, { folder: "moviesTS" })
-        } catch (err) {
-            console.log('Error in uploading movie image', err)
-            res.status(500).json({ message: 'Error in uploading movie image', success: false })
-            return
-        }
         
-        try {
-            bgImageUpload = await cloudinaryInstance.uploader.upload(bgImage.path, { folder: "moviesTS" })
-        } catch (err) {
-            console.log('Error in uploading background image', err)
-            res.status(500).json({ message: 'Error in uploading background image', success: false })
-            return
-        }
+        const files = req.files as UploadedFiles        // checking for image file in multer 
+        const movieData: IMovie = req.body          // getting movie data from request body
 
-        // storing url
-        const movieImageUrl: string = movieImageUpload.url
-        const bgImageUrl: string = bgImageUpload.url
 
-        const { movieName, language, genre, releaseDate, description, duration, status }: IMovie = req.body
+        const { success, message } = await createNewMovie(files, movieData)         // calling movie creation service
 
-        // creating instance 
-        const createNewMovie: IMovie = new Movie({
-            movieName,
-            language,
-            genre,
-            releaseDate,
-            description,
-            duration,
-            coverImage: bgImageUrl,
-            posterImage: movieImageUrl,
-            status
-        })
 
-        // saving in DB
-        await createNewMovie.save()
-
-        res.status(200).json({ message: "New Movie created successfully", success: true })
-
-    } catch (error) {
-        console.log("Error in creating movie", error)
-        res.status(500).json({ message: "Internal server error at movie creation", success: false })
+        res.status(200).json({ message, success })
+    } catch (error: any) {
+        console.error("Error in creating movie", error)
+        res.status(500).json({ message: error.message || "Internal server error at movie creation", success: false })
     }
 }
 
@@ -77,15 +30,16 @@ export const createMovie = async (req: Request, res: Response): Promise<void> =>
 export const showAllMovies = async (req: Request, res: Response): Promise<void> => {
     try {
 
-        // getting all movies list from DB 
-        const movies: IMovie[] = await Movie.find()
-        if (!movies || movies.length === 0) {
-            res.status(404).json({ message: "No movies found", success: false })
+        const movies = await fetchAllMovies()       // calling movie fetching service
+
+        res.status(200).json({ message: movies, success: true })
+    } catch (error: any) {
+
+        if (error.message === "NOT_FOUND") {
+            res.status(404).json({ message: "Movies not found", success: false })
             return
         }
 
-        res.status(200).json({ message: movies, success: true })
-    } catch (error) {
         console.log("Error in showing movies", error)
         res.status(500).json({ message: "Internal server error at showing movies", success: false })
     }
@@ -96,27 +50,27 @@ export const showAllMovies = async (req: Request, res: Response): Promise<void> 
 export const showMovie = async (req: Request, res: Response): Promise<void> => {
     try {
 
-        // movie id here
-        const { id } = req.params
+        
+        const { id } = req.params       // movie id here
 
+        const movie = await findMovieById(id)       // calling movie fetching service
+        
 
-        // search by movie id 
-        const movie: IMovie | null = await Movie.findById(id)
-        if (!movie) {
+        res.status(200).json({ message: movie, success: true })
+    } catch (error: any) {
+
+        if (error.message === "NOT_FOUND") {
             res.status(404).json({ message: "Movie not found", success: false })
             return
         }
 
-
-        res.status(200).json({ message: movie, success: true })
-    } catch (error) {
         console.log("Error in showing movie", error)
         res.status(500).json({ message: "Internal server error at showing movie", success: false })
     }
 }
 
 
-// delete a movie 
+// TODO: delete a movie 
 export const deleteMovie = async (req: Request, res: Response): Promise<void> => {
     try {
         //movie id here
@@ -142,7 +96,3 @@ export const deleteMovie = async (req: Request, res: Response): Promise<void> =>
         res.status(500).json({ message: "Internal server error at deleting movie", success: false })
     }
 }
-
-
-
-// update a movie

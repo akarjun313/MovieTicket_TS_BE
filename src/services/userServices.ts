@@ -1,5 +1,5 @@
 import { UserInterface } from "@interfaces/interfaces.js"
-import { createUser, findUserByEmail } from "repository/userRepos.js"
+import { createUser, findUserByEmail } from "@repos/userRepos.js"
 import bcrypt from "bcrypt"
 import { userTokenGenerate } from "@utils/generateToken.js"
 import { UserSignupDTO } from "@interfaces/dto.interfaces.js"
