@@ -1,7 +1,7 @@
 import { cloudinaryInstance } from "@config/cloudinary.js"
 import { MovieDTO, UploadedFiles } from "@interfaces/dto.interfaces.js"
 import { IMovie } from "@interfaces/interfaces.js"
-import { createMovie, findMovies, findOneMovie } from "@repos/movieRepos.js"
+import { countOfMoviePlayingInTheatre, createMovie, deleteMovieById, findMovies, findOneMovie } from "@repos/movieRepos.js"
 
 //  function to create a new movie
 export const createNewMovie = async (imgFiles: UploadedFiles, movieData: Partial<MovieDTO>): Promise<{ success: boolean; message: string }> => {
@@ -50,7 +50,25 @@ export const findMovieById = async (id: string): Promise<IMovie> => {
 }
 
 
-//  TODO: Delete a movie by _id
-export const deleteMovie = async (id: string) => {
-    
+//  Delete a movie by _id
+export const deleteThisMovie = async (id: string): Promise<{ success: boolean; message: string }> => {
+
+
+    // check if movie is playing in any theatre
+    const theatreCountOfMoviePlaying = await countOfMoviePlayingInTheatre(id)
+    if(theatreCountOfMoviePlaying > 0) {
+        throw new Error(`FAILED !!, Movie is currently playing in ${theatreCountOfMoviePlaying} theatre(s)`)
+    }
+
+
+    //  calling delete movie repo
+    const deleteMovie = await deleteMovieById(id)
+    if(!deleteMovie) {
+        throw new Error('NOT_FOUND')
+    }
+
+
+    // TODO: delete images from cloudinary
+
+    return { success: true, message: "Movie deleted successfully" }
 }

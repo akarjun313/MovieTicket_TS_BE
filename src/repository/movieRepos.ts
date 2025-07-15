@@ -1,6 +1,7 @@
 import { MovieDTO } from "@interfaces/dto.interfaces.js";
 import { IMovie } from "@interfaces/interfaces.js";
 import Movie from "@models/movieModel.js";
+import Theatre from "@models/theatreModel.js";
 
 
 
@@ -26,4 +27,10 @@ export const findOneMovie = async (id: string): Promise<IMovie | null> =>  {
 //  Repo function for Delete movie by _id
 export const deleteMovieById = async (id: string): Promise<IMovie | null> =>  {
     return await Movie.findByIdAndDelete(id).exec()
+}
+
+
+// Gives the count of theatre a specfic movie is playing
+export const countOfMoviePlayingInTheatre = async (movieId: string): Promise<number> => {
+    return await Theatre.countDocuments({'screens.movie': movieId})
 }

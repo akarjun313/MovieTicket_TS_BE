@@ -87,11 +87,6 @@ export interface IReview extends Document {
 export interface AuthRequest extends Request {
     user?: {
         data: string;
-        role: string
+        role: string;
     }
 }
-
-
-
-
-// 

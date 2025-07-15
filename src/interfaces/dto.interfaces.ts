@@ -10,13 +10,12 @@ export interface UserSignupDTO {
 }
 
 
+//      MOVIE RELATED INTERFACES
 // for files uploads in movie creation
 export interface UploadedFiles {
     movieImage?: Express.Multer.File[];
     bgImage?: Express.Multer.File[]
 }
-
-
 //      MOVIE INTERFACE
 export interface MovieDTO {
     movieName: string;
@@ -29,4 +28,24 @@ export interface MovieDTO {
     coverImage: string;
     posterImage: string;
     status: 'RUNNING' | 'UPCOMING';
+}
+
+
+//      THEATRE RELATED INTERFACES
+//     screen interface
+export interface ScreenDTO {
+    screenName: string;
+    seatRow: number;
+    seatColumn: number;
+}
+//     theatre interface
+export interface TheatreDTO {
+    theatreName: string;
+    location: {
+        state: string;
+        city: string;
+        landmark: string;
+    }
+    screens: ScreenDTO[];
+    owner: string;
 }

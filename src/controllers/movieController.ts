@@ -1,9 +1,7 @@
 import { Request, Response } from "express"
 import { IMovie } from "@interfaces/interfaces.js"
-import Movie from "@models/movieModel.js"
-import Theatre from "@models/theatreModel.js"
 import { UploadedFiles } from "@interfaces/dto.interfaces.js"
-import { createNewMovie, fetchAllMovies, findMovieById } from "@services/movieServices.js"
+import { createNewMovie, fetchAllMovies, findMovieById, deleteThisMovie } from "@services/movieServices.js"
 
 
 // controller create new movie 
@@ -70,29 +68,24 @@ export const showMovie = async (req: Request, res: Response): Promise<void> => {
 }
 
 
-// TODO: delete a movie 
+// delete a movie 
 export const deleteMovie = async (req: Request, res: Response): Promise<void> => {
     try {
         //movie id here
         const { id } = req.params
 
-        const theatreCountOfMoviePlaying: number = await Theatre.countDocuments({'screens.movie': id})
-        if(theatreCountOfMoviePlaying > 0) {
-            res.json({ message: `FAILED !!, Movie is currently playing in ${theatreCountOfMoviePlaying} theatre(s)`, success: false })
-            return
-        }
+        //      service function to delete movie
+        const { success, message } = await deleteThisMovie(id)
 
+        res.status(200).json({ message, success})
+    } catch (error: any) {
 
-        // search by movie id and delete
-        const movie: IMovie | null = await Movie.findByIdAndDelete(id)
-        if (!movie) {
+        if (error.message === "NOT_FOUND") {
             res.status(404).json({ message: "Movie not found", success: false })
             return
         }
 
-        res.status(200).json({ message: "Movie deleted successfully", success: true })
-    } catch (error) {
         console.log("Error in deleting movie", error)
-        res.status(500).json({ message: "Internal server error at deleting movie", success: false })
+        res.status(500).json({ message: error.message || "Internal server error at deleting movie", success: false })
     }
 }
