@@ -6,7 +6,7 @@ import User from "@models/userModel.js"
 import Movie from "@models/movieModel.js"
 import mongoose from "mongoose"
 import { generateSeatingArrangement } from "helper/seatingArrangement.js"
-import { createATheatre, theatreStatusUpdate } from "@services/theatreServices.js"
+import { createATheatre, theatreStatusUpdate, updateTheatreMovie } from "@services/theatreServices.js"
 
 // TODO: create theatre (clean up requries)
 export const addNewTheatre = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -211,105 +211,79 @@ export const deleteOneTheatre = async (req: Request<{ id: string }>, res: Respon
 
 
 // UPDATE THEATRE
-// TODO: update movie in theatre-screen
+// update movie in theatre-screen
 export const updateMovieInTheatre = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
     console.log("hitted on updateMovieInTheatre")
     try {
-        // theatre id here 
+        // theatre _id here 
         const { id } = req.params
 
-        // movie id & screen name here
+        // movie _id & screenName here
         const { movieId, screen }: { movieId?: string; screen: string } = req.body
 
-        const theatre: ITheatre | null = await Theatre.findById(id)
-        if (!theatre) {
+        // calling service func - updating movie and show times
+        const { message, success } = await updateTheatreMovie(id, screen, movieId)
+
+
+        res.status(200).json({ message, success})
+
+    } catch (error: any) {
+
+        // theatre not found
+        if( error.message === "T_NOT_FOUND" ) {
             res.status(404).json({ message: "Theatre not found", success: false })
             return
         }
 
-        // check if theatre is active
-        if (theatre.status === false) {
-            res.status(400).json({ message: "Theatre is not active", success: false })
-            return
-        }
-
-
-        // Finding target screen
-        const targetScreen: IScreen | undefined = theatre.screens.find((scr) => scr.screenName === screen)
-        if (!targetScreen) {
+        // screen not found
+        if( error.message === "S_NOT_FOUND" ) {
             res.status(404).json({ message: "Screen not found", success: false })
             return
         }
 
-
-        if (movieId) {
-
-            // finding movie
-            const movie: IMovie | null = await Movie.findById(movieId)
-            if (!movie) {
-                res.status(404).json({ message: "Movie not found", success: false })
-                return
-            }
-
-            // update movie in theatre-screen
-            targetScreen.movie = movie._id as mongoose.Types.ObjectId
-        } else {
-            // remove movie from theatre-screen
-            targetScreen.movie = undefined
+        // movie not found
+        if( error.message === "M_NOT_FOUND" ) {
+            res.status(404).json({ message: "Movie not found", success: false })
+            return
         }
 
 
-        // Reset show timings if movie is changed
-        targetScreen.showTimes = []
-
-        // save changes to DB 
-        await theatre.save()
-
-
-        res.status(200).json({
-            message: movieId
-                ? "Movie updated successfully in theatre"
-                : "Movie removed successfully from theatre",
-            success: true
-        })
-
-    } catch (error) {
         res.status(500).json({ message: "Internal server error at updating movie in theatre", success: false })
         console.log("error in updating movie in theatre", error)
     }
 }
 
 
-// TODO: update date and times of theatre-screen
+// TODO: update date and times of theatre-screen - update one-by-one show timings
 export const updateShowTimings = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
     try {
         // theatre id here
         const { id } = req.params
 
 
-        // show timings with date and screen name here
-        const { date, time, price, screen }: { date: string; time: string; price: number; screen: string } = req.body
+        // Getting datas from request - dateTime, price, screenName
+        const { dateTime, price, screen }: { dateTime: Date; price: number; screen: string } = req.body
 
         // finding theatre
-        const theatre: ITheatre | null = await Theatre.findById(id)
-        if (!theatre) {
-            res.status(404).json({ message: "Theatre not found", success: false })
-            return
-        }
+        // const theatre: ITheatre | null = await Theatre.findById(id)
+        // if (!theatre) {
+        //     res.status(404).json({ message: "Theatre not found", success: false })
+        //     return
+        // }
 
-        // check if theatre is active
-        if (theatre.status === false) {
-            res.status(400).json({ message: "Theatre is not active", success: false })
-            return
-        }
+        // // check if theatre is active
+        // if (theatre.status === false) {
+        //     res.status(400).json({ message: "Theatre is not active", success: false })
+        //     return
+        // }
 
 
         // find target screen
-        const targetScreen: IScreen | undefined = theatre.screens.find((scr) => scr.screenName === screen)
-        if (!targetScreen) {
-            res.status(404).json({ message: "Screen not found", success: false })
-            return
-        }
+        // const targetScreen: IScreen | undefined = theatre.screens.find((scr) => scr.screenName === screen)
+        // if (!targetScreen) {
+        //     res.status(404).json({ message: "Screen not found", success: false })
+        //     return
+        // }
 
         // check if show timings already exist
         const showTimeExist = targetScreen.showTimes.some(

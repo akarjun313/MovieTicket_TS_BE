@@ -19,12 +19,8 @@ const seatSchema = new Schema<ISeat>({
 
 // show time schema 
 const showTimeSchema = new Schema<IShowTime>({
-    time: {
-        type: String,
-        required: true
-    },
-    date: {
-        type: String,
+    dateTime: {
+        type: Date,
         required: true
     },
     price: {

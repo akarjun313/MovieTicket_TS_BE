@@ -2,6 +2,7 @@ import { MovieDTO } from "@interfaces/dto.interfaces.js";
 import { IMovie } from "@interfaces/interfaces.js";
 import Movie from "@models/movieModel.js";
 import Theatre from "@models/theatreModel.js";
+import mongoose from "mongoose";
 
 
 
@@ -19,7 +20,7 @@ export const findMovies = async (): Promise<IMovie[] | null> =>  {
 
 
 //  Repo function for fetching one movie by _id
-export const findOneMovie = async (id: string): Promise<IMovie | null> =>  {
+export const findOneMovie = async (id: string | mongoose.Types.ObjectId): Promise<IMovie | null> =>  {
     return await Movie.findById(id).exec()
 }
 

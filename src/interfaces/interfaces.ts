@@ -41,8 +41,7 @@ export interface ISeat extends Document {
 
 // showtime interface 
 export interface IShowTime extends Document {
-    time: string
-    date: string
+    dateTime: Date
     price: number
     seats: ISeat[]
 }
